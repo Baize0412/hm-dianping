@@ -18,5 +18,7 @@ import javax.servlet.http.HttpSession;
 public interface IUserService extends IService<User> {
     Result sendCode(String phone, HttpSession session);
     Result login(LoginFormDTO loginFormDTO,HttpSession session);
+    Result logout();
 
+    Result me();
 }
