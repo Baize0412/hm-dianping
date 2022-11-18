@@ -1,6 +1,7 @@
 package com.hmdp.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -81,7 +83,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             //不一致
             return Result.fail("验证码不一致");
         }
-        //根据phone查询用户 select * from tb_user where phone = ?
+        // 根据phone查询用户 select * from tb_user where phone = ?
         User user = query().eq("phone", phone).one();
 
         //判断用户是否存在
@@ -91,8 +93,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         //用户信息保存到redis hashmap user->map
 //        session.setAttribute("user", BeanUtil.copyProperties(user,UserDTO.class));
-        //obj->hashmap
-        Map<String, Object> userToMap = BeanUtil.beanToMap(user);
+        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);    // objcopy
+        // TODO obj->hashmap,此处有坑stringRedisTemplate只能存储string字段 userDTO{id:}类型：long
+        Map<String, Object> userToMap = BeanUtil.beanToMap(userDTO,new HashMap<>(),
+                CopyOptions.create()
+                        .setIgnoreNullValue(true)
+                        .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
         //生成token
         String token = UUID.randomUUID().toString();
         //保存用户信息到redis key:token value:user(map)
